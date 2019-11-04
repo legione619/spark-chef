@@ -4,7 +4,7 @@ maintainer_email "jdowling@kth.se"
 license          "Apache v2"
 description      'Installs/Configures Spark'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          "0.9.0"
+version          "1.0.0"
 source_url       "https://github.com/hopshadoop/spark-chef"
 
 depends          "kagent"
@@ -108,10 +108,6 @@ attribute "hadoop_spark/tf_spark_connector_version",
           :description => "the version of the tf-spark-connector .jar",
           :type => "string"
 
-attribute "hadoop_spark/tf_spark_connector/url",
-          :description => "the url for downloading the tf-spark-connector .jar",
-          :type => "string"
-
 attribute "hadoop_spark/hopsutil_version",
           :description => "the version of the hops-library .jar",
           :type => "string"
@@ -132,10 +128,31 @@ attribute "hadoop_spark/hopsexamples_hive/url",
           :description => "the url for dowloading the hopsexamples_hive jar",
           :type => "string"
 
-attribute "hadoop_spark/hopsexamples_flink/url",
-          :description => "the url for dowloading the hopsexamples_flink jar",
+attribute "hadoop_spark/hopsexamples_featurestore_tour/url",
+          :description => "the url for dowloading the hopsexamples_featurestore_tour jar",
           :type => "string"
 
-attribute "hadoop_spark/hopsexamples_featurestore/url",
-          :description => "the url for dowloading the hopsexamples_featurestore jar",
+attribute "hadoop_spark/spark_avro_version",
+          :description => "the version of the spark-avro jar",
+          :type => "string"
+
+
+attribute "hadoop_spark/hopsexamples_featurestore_util4j/url",
+          :description => "the url for dowloading the hopsexamples_featurestore_util4j jar",
+          :type => "string"
+
+attribute "hadoop_spark/hopsexamples_featurestore_util_py/url",
+          :description => "the url for dowloading the hopsexamples_featurestore_util_py python file",
+          :type => "string"
+
+attribute "hadoop_spark/databricks_spark_avro_version",
+          :description => "the version of the databricks avro jar (dependency of hudi)",
+          :type => "string"
+
+attribute "hadoop_spark/databricks_delta_version",
+          :description => "the version of the databricks delta jar",
+          :type => "string"
+
+attribute "hadoop_spark/url",
+          :description => "the url for downloading the spark tgz",
           :type => "string"

@@ -12,6 +12,7 @@ include_recipe "java"
 group node['hadoop_spark']['group'] do
   action :create
   not_if "getent group #{node['hadoop_spark']['group']}"
+  not_if { node['install']['external_users'].casecmp("true") == 0 }
 end
 
 user node['hadoop_spark']['user'] do
@@ -20,12 +21,14 @@ user node['hadoop_spark']['user'] do
   system true
   shell "/bin/false"
   not_if "getent passwd #{node['hadoop_spark']['user']}"
+  not_if { node['install']['external_users'].casecmp("true") == 0 }
 end
 
 group node['hadoop_spark']['group'] do
   action :modify
-   members ["#{node['hadoop_spark']['user']}"]
+  members ["#{node['hadoop_spark']['user']}"]
   append true
+  not_if { node['install']['external_users'].casecmp("true") == 0 }
 end
 
 directory node['hadoop_spark']['dir']  do
@@ -66,22 +69,46 @@ bash 'extract_hadoop_spark' do
      not_if { ::File.exists?( spark_down ) }
 end
 
+bash 'link_jars' do
+        user "root"
+        code <<-EOH
+                set -e
+                rm -f #{node['hadoop_spark']['home']}/python/lib/py4j-src.zip
+                ln -s #{node['hadoop_spark']['home']}/python/lib/py4j-*-src.zip #{node['hadoop_spark']['home']}/python/lib/py4j-src.zip
+                rm -f #{node['hadoop_spark']['home']}/jars/datanucleus-api-jdo.jar
+                ln -s #{node['hadoop_spark']['home']}/jars/datanucleus-api-jdo-*.jar #{node['hadoop_spark']['home']}/jars/datanucleus-api-jdo.jar
+                rm -f #{node['hadoop_spark']['home']}/jars/datanucleus-core.jar
+                ln -s #{node['hadoop_spark']['home']}/jars/datanucleus-core-*.jar #{node['hadoop_spark']['home']}/jars/datanucleus-core.jar
+                rm -f #{node['hadoop_spark']['home']}/jars/datanucleus-rdbms.jar
+                ln -s #{node['hadoop_spark']['home']}/jars/datanucleus-rdbms-*.jar #{node['hadoop_spark']['home']}/jars/datanucleus-rdbms.jar
+        EOH
+end
+
 #Copy SQL dependencies to SPARK_HOME/jars
 purl=node['hadoop_spark']['spark_sql_dependencies_url']
 # The following dependencies are required to run spark-sql with parquet and orc. We install them here so that users don't have to do it from their notebooks/jobs
 # https://mvnrepository.com/artifact/org.spark-project.hive/hive-exec/1.2.1.spark2
 # http://central.maven.org/maven2/org/iq80/snappy/snappy/0.4/
-files= "parquet-encoding-#{node['hadoop_spark']['parquet_version']}.jar, parquet-common-#{node['hadoop_spark']['parquet_version']}.jar, parquet-hadoop-#{node['hadoop_spark']['parquet_version']}.jar, parquet-jackson-#{node['hadoop_spark']['parquet_version']}.jar, parquet-column-#{node['hadoop_spark']['parquet_version']}.jar, parquet-format-#{node['hadoop_spark']['parquet_format_version']}.jar, hive-exec-1.2.1.spark2.jar, spark-hive_#{node['scala']['version']}-#{node['hadoop_spark']['version']}.jar,snappy-0.4.jar"
+files= "parquet-encoding-#{node['hadoop_spark']['parquet_version']}.jar, parquet-common-#{node['hadoop_spark']['parquet_version']}.jar, parquet-hadoop-#{node['hadoop_spark']['parquet_version']}.jar, parquet-jackson-#{node['hadoop_spark']['parquet_version']}.jar, parquet-column-#{node['hadoop_spark']['parquet_version']}.jar, parquet-format-#{node['hadoop_spark']['parquet_format_version']}.jar, spark-hive_#{node['scala']['version']}-#{node['hadoop_spark']['version']}.jar,snappy-0.4.jar, spark-avro_#{node['hadoop_spark']['spark_avro_version']}.jar, spark-tensorflow-connector_#{node['hadoop_spark']['tf_spark_connector_version']}.jar, hudi-client-#{node['hive2']['hudi_version']}.jar, hudi-hive-bundle-#{node['hive2']['hudi_version']}.jar, hudi-utilities-#{node['hive2']['hudi_version']}.jar, hudi-common-#{node['hive2']['hudi_version']}.jar, hudi-spark-#{node['hive2']['hudi_version']}.jar, spark-avro_#{node['hadoop_spark']['databricks_spark_avro_version']}.jar, delta-core_#{node['hadoop_spark']['databricks_delta_version']}.jar"
 allFiles = files.split(/\s*,\s*/)
-  
+
 for f in allFiles do
   remote_file "#{node['hadoop_spark']['home']}/jars/#{f}" do
     source "#{purl}/#{f}"
     owner node['hadoop_spark']['user']
-    group node['hadoop_spark']['group']  
+    group node['hadoop_spark']['group']
     mode "0644"
     action :create_if_missing
   end
+end
+
+# Download MySQL Driver for Online featurestore
+remote_file "#{node['hadoop_spark']['home']}/jars/#{f}" do
+  source node['hadoop_spark']['mysql_driver']
+  owner node['hadoop_spark']['user']
+  group node['hadoop_spark']['group']
+  mode "0644"
+  action :create_if_missing
 end
 
 link node['hadoop_spark']['base_dir'] do
