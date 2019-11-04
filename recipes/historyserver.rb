@@ -21,6 +21,10 @@ when "ubuntu"
  end
 end
 
+deps = ""
+if exists_local("hops", "nn") 
+  deps = "namenode.service"
+end  
 service_name="sparkhistoryserver"
 
 if node['hadoop_spark']['systemd'] == "true"
@@ -43,6 +47,9 @@ if node['hadoop_spark']['systemd'] == "true"
     owner "root"
     group "root"
     mode 0754
+    variables({
+                :deps => deps
+    })
     notifies :enable, resources(:service => service_name)
     notifies :start, resources(:service => service_name), :immediately
   end
@@ -75,7 +82,6 @@ if node['kagent']['enabled'] == "true"
    kagent_config service_name do
      service "HISTORY_SERVERS"
      log_file "#{node['hadoop_spark']['base_dir']}/logs/spark-#{node['hadoop_spark']['user']}-org.apache.spark.deploy.history.HistoryServer-1-#{node['hostname']}.out"
-     web_port node['hadoop_spark']['historyserver']['port']
    end
 end
 

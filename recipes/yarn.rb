@@ -1,10 +1,3 @@
-# Creating symbolic links from spark jars in the lib/ directory where spark is installed to
-# the directory containing yarn jars in hadoop. Hopefully, yarn will pick up these jars and add them
-# to the HADOOP_CLASSPATH :)
-# One potential problem could be if you install.hadoop_spark.as a different user than the default user 'yarn'.
-# Then the symbolic link may not be able to be created due to a lack of file privileges.
-#
-
 home = node['hops']['hdfs']['user_home']
 private_ip=my_private_ip()
 
@@ -69,6 +62,15 @@ template"#{node['hadoop_spark']['conf_dir']}/log4j.properties" do
   mode 0650
 end
 
+hopsUtil=File.basename(node['hadoop_spark']['hopsutil']['url'])
+remote_file "#{node['hadoop_spark']['home']}/jars/#{hopsUtil}" do
+  source node['hadoop_spark']['hopsutil']['url']
+  owner node['hadoop_spark']['user']
+  group node['hops']['group']
+  mode "1755"
+  action :create
+end
+
 # Only the first of the spark::yarn hosts needs to run this code (not all of them)
 #see HOPSWORKS-572 why the following if clause changed
 #if private_ip.eql? node['hadoop_spark']['yarn']['private_ips'][0]
@@ -87,6 +89,15 @@ if (File.exist?("#{node['kagent']['certs_dir']}/cacerts.jks"))
     owner node['hadoop_spark']['user']
     group node['hops']['group']
     mode "1777"
+  end
+
+  bash "set_userspark_storage_type" do
+    user node['hops']['hdfs']['user']  
+    group node['hops']['group'] 
+    code <<-EOH
+      #{node['hops']['bin_dir']}/hdfs storagepolicies -setStoragePolicy -path #{home}/#{node['hadoop_spark']['user']} -policy DB
+    EOH
+    action :run
   end
 
   hops_hdfs_directory "#{home}/#{node['hadoop_spark']['user']}/eventlog" do
@@ -118,22 +129,6 @@ if (File.exist?("#{node['kagent']['certs_dir']}/cacerts.jks"))
     dest "#{node['hadoop_spark']['yarn']['archive_hdfs']}"
   end
 
-  hops_hdfs_directory "#{node['hadoop_spark']['home']}/python/lib/#{node['hadoop_spark']['yarn']['pyspark_archive']}" do
-    action :replace_as_superuser
-    owner node['hadoop_spark']['user']
-    group node['hops']['group']
-    mode "1775"
-    dest "#{node['hadoop_spark']['yarn']['pyspark_archive_hdfs']}"
-  end
-
-  hops_hdfs_directory "#{node['hadoop_spark']['home']}/python/lib/#{node['hadoop_spark']['yarn']['py4j_archive']}" do
-    action :replace_as_superuser
-    owner node['hadoop_spark']['user']
-    group node['hops']['group']
-    mode "1775"
-    dest "#{node['hadoop_spark']['yarn']['py4j_archive_hdfs']}"
-  end
-
   hopsworks_user=node['hops']['hdfs']['user']
   hopsworks_group=node['hops']['group']
 
@@ -143,46 +138,29 @@ if (File.exist?("#{node['kagent']['certs_dir']}/cacerts.jks"))
     end
   end
 
-  hopsUtil=File.basename(node['hadoop_spark']['hopsutil']['url'])
-  remote_file "#{Chef::Config['file_cache_path']}/#{hopsUtil}" do
-    source node['hadoop_spark']['hopsutil']['url']
+  hopsVerification = File.basename(node['hadoop_spark']['hops_verification']['url'])
+  remote_file "#{Chef::Config['file_cache_path']}/#{hopsVerification}" do
+    source node['hadoop_spark']['hops_verification']['url']
     owner node['hadoop_spark']['user']
     group node['hops']['group']
-    mode "1775"
+    mode "0755"
     action :create
   end
 
-  hops_hdfs_directory "#{Chef::Config['file_cache_path']}/#{hopsUtil}" do
-    action :replace_as_superuser
+  hops_hdfs_directory "#{Chef::Config['file_cache_path']}/#{hopsVerification}" do
     owner node['hadoop_spark']['user']
     group node['hops']['group']
     mode "1755"
-    dest "/user/#{node['hadoop_spark']['user']}/#{hopsUtil}"
+    dest "/user/#{node['hadoop_spark']['user']}/#{hopsVerification}"
+    action :replace_as_superuser
   end
   
-  spark_tf_connector=File.basename(node['hadoop_spark']['tf_spark_connector']['url'])
-  remote_file "#{Chef::Config['file_cache_path']}/#{spark_tf_connector}" do
-    source node['hadoop_spark']['tf_spark_connector']['url']
-    owner node['hadoop_spark']['user']
-    group node['hops']['group']
-    mode "1775"
-    action :create
-  end
-
-  hops_hdfs_directory "#{Chef::Config['file_cache_path']}/#{spark_tf_connector}" do
-    action :replace_as_superuser
-    owner node['hadoop_spark']['user']
-    group node['hops']['group']
-    mode "1755"
-    dest "/user/#{node['hadoop_spark']['user']}/#{spark_tf_connector}"
-  end
-
   hopsExamplesSpark=File.basename(node['hadoop_spark']['hopsexamples_spark']['url'])
   remote_file "#{Chef::Config['file_cache_path']}/#{hopsExamplesSpark}" do
     source node['hadoop_spark']['hopsexamples_spark']['url']
     owner node['hadoop_spark']['user']
     group node['hops']['group']
-    mode "1775"
+    mode "1755"
     action :create
   end
 
@@ -194,28 +172,62 @@ if (File.exist?("#{node['kagent']['certs_dir']}/cacerts.jks"))
     dest "/user/#{node['hadoop_spark']['user']}/#{hopsExamplesSpark}"
   end
 
-  hopsExamplesFeaturestore=File.basename(node['hadoop_spark']['hopsexamples_featurestore']['url'])
-  remote_file "#{Chef::Config['file_cache_path']}/#{hopsExamplesFeaturestore}" do
-    source node['hadoop_spark']['hopsexamples_featurestore']['url']
+  hopsExamplesFeaturestoreTour=File.basename(node['hadoop_spark']['hopsexamples_featurestore_tour']['url'])
+  remote_file "#{Chef::Config['file_cache_path']}/#{hopsExamplesFeaturestoreTour}" do
+    source node['hadoop_spark']['hopsexamples_featurestore_tour']['url']
     owner node['hadoop_spark']['user']
     group node['hops']['group']
-    mode "1775"
+    mode "1755"
     action :create
   end
 
-  hops_hdfs_directory "#{Chef::Config['file_cache_path']}/#{hopsExamplesFeaturestore}" do
+  hops_hdfs_directory "#{Chef::Config['file_cache_path']}/#{hopsExamplesFeaturestoreTour}" do
     action :replace_as_superuser
     owner node['hadoop_spark']['user']
     group node['hops']['group']
     mode "1755"
-    dest "/user/#{node['hadoop_spark']['user']}/#{hopsExamplesFeaturestore}"
+    dest "/user/#{node['hadoop_spark']['user']}/#{hopsExamplesFeaturestoreTour}"
+  end
+
+  hopsExamplesFeaturestoreUtil4j=File.basename(node['hadoop_spark']['hopsexamples_featurestore_util4j']['url'])
+  remote_file "#{Chef::Config['file_cache_path']}/#{hopsExamplesFeaturestoreUtil4j}" do
+    source node['hadoop_spark']['hopsexamples_featurestore_util4j']['url']
+    owner node['hadoop_spark']['user']
+    group node['hops']['group']
+    mode "1755"
+    action :create
+  end
+
+  hops_hdfs_directory "#{Chef::Config['file_cache_path']}/#{hopsExamplesFeaturestoreUtil4j}" do
+    action :replace_as_superuser
+    owner node['hadoop_spark']['user']
+    group node['hops']['group']
+    mode "1755"
+    dest "/user/#{node['hadoop_spark']['user']}/#{hopsExamplesFeaturestoreUtil4j}"
+  end
+
+  hopsExamplesFeaturestoreUtilPy=File.basename(node['hadoop_spark']['hopsexamples_featurestore_util_py']['url'])
+  remote_file "#{Chef::Config['file_cache_path']}/#{hopsExamplesFeaturestoreUtilPy}" do
+    source node['hadoop_spark']['hopsexamples_featurestore_util_py']['url']
+    owner node['hadoop_spark']['user']
+    group node['hops']['group']
+    mode "1755"
+    action :create
+  end
+
+  hops_hdfs_directory "#{Chef::Config['file_cache_path']}/#{hopsExamplesFeaturestoreUtilPy}" do
+    action :replace_as_superuser
+    owner node['hadoop_spark']['user']
+    group node['hops']['group']
+    mode "1755"
+    dest "/user/#{node['hadoop_spark']['user']}/#{hopsExamplesFeaturestoreUtilPy}"
   end
 
   hops_hdfs_directory "#{node['hadoop_spark']['base_dir']}/conf/metrics.properties"  do
     action :replace_as_superuser
     owner node['hadoop_spark']['user']
     group node['hadoop_spark']['group']
-    mode "1775"
+    mode "1755"
     dest "/user/#{node['hadoop_spark']['user']}/metrics.properties"
   end
 
@@ -224,7 +236,7 @@ if (File.exist?("#{node['kagent']['certs_dir']}/cacerts.jks"))
     action :replace_as_superuser
     owner node['hadoop_spark']['user']
     group node['hops']['group']
-    mode "1775"
+    mode "1755"
     dest "/user/#{node['hops']['hdfs']['user']}/metrics.properties"
   end
 
@@ -232,16 +244,25 @@ if (File.exist?("#{node['kagent']['certs_dir']}/cacerts.jks"))
     action :replace_as_superuser
     owner node['hadoop_spark']['user']
     group node['hops']['group']
-    mode "1775"
+    mode "1755"
     dest "/user/#{node['hadoop_spark']['user']}/log4j.properties"
   end
 
-  bash 'materialize_truststore' do
+  encyption_password = "adminpw"
+  if node.attribute?('hopsworks') && node['hopsworks'].attribute?('master') && node['hopsworks']['master'].attribute?('password')
+    encyption_password = node['hopsworks']['master']['password']
+  end
+
+  cacerts_pem_filename = "cacerts.pem"
+  bash 'materialize_truststore and convert to pem' do
     user "root"
     code <<-EOH
         cp -f #{node['kagent']['certs_dir']}/cacerts.jks /tmp
         chmod 755 /tmp/cacerts.jks
-        EOH
+        keytool -importkeystore -srckeystore /tmp/cacerts.jks -destkeystore /tmp/cacerts.p12 -srcstoretype jks -deststoretype pkcs12 -noprompt -srcstorepass #{encyption_password} -deststorepass #{encyption_password} 
+        openssl pkcs12 -in /tmp/cacerts.p12 -out /tmp/#{cacerts_pem_filename} -passin pass:#{encyption_password}
+        chmod 444 /tmp/#{cacerts_pem_filename}
+    EOH
   end
 
   #Copy glassfish truststore to hdfs under hdfs user so that HopsUtil can make https requests to HopsWorks
@@ -253,23 +274,82 @@ if (File.exist?("#{node['kagent']['certs_dir']}/cacerts.jks"))
     dest "/user/#{node['hadoop_spark']['user']}/cacerts.jks"
   end
 
+  #Copy glassfish truststore (PEM) to hdfs under hdfs user so that hops-util-py can make https requests to Hopsworks
+  hops_hdfs_directory "/tmp/cacerts.pem" do
+    action :put_as_superuser
+    owner node['hadoop_spark']['user']
+    group node['hops']['group']
+    mode "0444"
+    dest "/user/#{node['hadoop_spark']['user']}/cacerts.pem"
+  end
+
+  bash 'cleanup_truststores' do
+    user "root"
+    code <<-EOH
+        rm -f /tmp/cacerts.jks
+        rm -f /tmp/#{cacerts_pem_filename}
+        rm -f /tmp/cacerts.p12
+	      rm -f #{node['kagent']['certs_dir']}/cacerts.jks
+    EOH
+  end
+
   #copy hive-site.xml to hdfs so that node-managers can download it to containers for running hive-jobs/notebooks
   hops_hdfs_directory "#{node['hadoop_spark']['home']}/conf/hive-site.xml" do
     action :replace_as_superuser
     owner node['hadoop_spark']['user']
     group node['hops']['group']
-    mode "1775"
+    mode "1755"
     dest "/user/#{node['hadoop_spark']['user']}/hive-site.xml"
   end
 
-  bash 'cleanup_truststore' do
+  if node['install']['enterprise']['install'].casecmp? "true"
+    source = "#{node['install']['enterprise']['download_url']}/featurestore-helpers/#{node['install']['version']}/ft_import.py"
+    remote_file "#{Chef::Config['file_cache_path']}/ft_import.py" do
+      user node['hadoop_spark']['user']
+      node['hadoop_spark']['group']
+      source source
+      headers get_ee_basic_auth_header()
+      sensitive true
+      mode 0555
+      action :create_if_missing
+    end
+
+    hops_hdfs_directory "#{Chef::Config['file_cache_path']}/ft_import.py" do
+      action :replace_as_superuser
+      owner node['hadoop_spark']['user']
+      group node['hops']['group']
+      mode "1775"
+      dest "/user/#{node['hadoop_spark']['user']}/ft_import.py"
+    end
+
+    source = "#{node['install']['enterprise']['download_url']}/featurestore-helpers/#{node['install']['version']}/ft_trainingdataset_job.py"
+    remote_file "#{Chef::Config['file_cache_path']}/ft_trainingdataset_job.py" do
+      user node['hadoop_spark']['user']
+      node['hadoop_spark']['group']
+      source source
+      headers get_ee_basic_auth_header()
+      sensitive true
+      mode 0555
+      action :create_if_missing
+    end
+
+    hops_hdfs_directory "#{Chef::Config['file_cache_path']}/ft_trainingdataset_job.py" do
+      action :replace_as_superuser
+      owner node['hadoop_spark']['user']
+      group node['hops']['group']
+      mode "1775"
+      dest "/user/#{node['hadoop_spark']['user']}/ft_trainingdataset_job.py"
+    end
+
+    bash 'cleanup_truststores' do
     user "root"
     code <<-EOH
-        rm -f /tmp/cacerts.jks
-	rm -f #{node['kagent']['certs_dir']}/cacerts.jks
-      EOH
+          rm -f /tmp/cacerts.jks
+	       rm -f #{node['kagent']['certs_dir']}/cacerts.jks
+          rm -f /tmp/cacerts.pem
+        EOH
+    end
   end
-
 end
 
 #

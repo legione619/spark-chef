@@ -6,7 +6,7 @@ include_attribute "hive2"
 default['hadoop_spark']['user']                                 = node['install']['user'].empty? ? "spark" : node['install']['user']
 default['hadoop_spark']['group']                                = node['install']['user'].empty? ? node['hops']['group'] : node['install']['user']
 
-default['hadoop_spark']['version']                              = "2.4.0"
+default['hadoop_spark']['version']                              = "2.4.3.0"
 default['scala']['version'] 	                                = "2.11"
 default['hadoop_spark']['dir']                                  = node['install']['dir'].empty? ? "/srv/hops" : node['install']['dir']
 default['hadoop_spark']['base_dir']                             = "#{node['hadoop_spark']['dir']}/spark"
@@ -94,16 +94,16 @@ default['hopsworks']['domain_truststore_path']                    = "#{node['hop
 default['hopsworks']['domain_truststore']                         = "#{node['hopsworks']['domain_truststore']}"
 
 #
-# Tensorflow-Spark Connector (Featurestore dependency)
-#
-default['hadoop_spark']['tf_spark_connector_version']                            = "2.11-1.12.0"
-default['hadoop_spark']['tf_spark_connector']['url']                     = "#{node['download_url']}/spark-tensorflow-connector_#{node['hadoop_spark']['tf_spark_connector_version']}.jar"
-
-#
 # Hops API jar
 #
 default['hadoop_spark']['hopsutil_version']                    = node['install']['version']
 default['hadoop_spark']['hopsutil']['url']                     = "#{node['download_url']}/hopsutil/#{node['hadoop_spark']['hopsutil_version']}/hops-util-#{node['hadoop_spark']['hopsutil_version']}.jar"
+
+#
+# Hops Deequ wrapper
+#
+default['hadoop_spark']['hops_verification']['version']        = node['install']['version']
+default['hadoop_spark']['hops_verification']['url']            = "#{node['download_url']}/hops-verification/hops-verification-assembly-#{node['hadoop_spark']['hops_verification']['version']}.jar"
 
 #
 # Hops Examples Spark Job/Notebook Dependency Jars
@@ -111,5 +111,23 @@ default['hadoop_spark']['hopsutil']['url']                     = "#{node['downlo
 default['hadoop_spark']['hopsexamples_version']                = node['install']['version']
 default['hadoop_spark']['hopsexamples_spark']['url']          = "#{node['download_url']}/hopsexamples/#{node['hadoop_spark']['hopsexamples_version']}/hops-examples-spark-#{node['hadoop_spark']['hopsexamples_version']}.jar"
 default['hadoop_spark']['hopsexamples_hive']['url']           = "#{node['download_url']}/hopsexamples/#{node['hadoop_spark']['hopsexamples_version']}/hops-examples-hive-#{node['hadoop_spark']['hopsexamples_version']}.jar"
-default['hadoop_spark']['hopsexamples_flink']['url']          = "#{node['download_url']}/hopsexamples/#{node['hadoop_spark']['hopsexamples_version']}/hops-examples-flink-#{node['hadoop_spark']['hopsexamples_version']}.jar"
-default['hadoop_spark']['hopsexamples_featurestore']['url']   = "#{node['download_url']}/hopsexamples/#{node['hadoop_spark']['hopsexamples_version']}/hops-examples-featurestore-#{node['hadoop_spark']['hopsexamples_version']}.jar"
+default['hadoop_spark']['hopsexamples_featurestore_tour']['url']   = "#{node['download_url']}/hopsexamples/#{node['hadoop_spark']['hopsexamples_version']}/hops-examples-featurestore-tour-#{node['hadoop_spark']['hopsexamples_version']}.jar"
+default['hadoop_spark']['hopsexamples_featurestore_util4j']['url']   = "#{node['download_url']}/hopsexamples/#{node['hadoop_spark']['hopsexamples_version']}/hops-examples-featurestore-util4j-#{node['hadoop_spark']['hopsexamples_version']}.jar"
+default['hadoop_spark']['hopsexamples_featurestore_util_py']['url']   = "#{node['download_url']}/hopsexamples/#{node['hadoop_spark']['hopsexamples_version']}/featurestore_util.py"
+
+#
+# Featurestore dependencies
+#
+default['hadoop_spark']['spark_avro_version']                            = "2.11-2.4.0"
+default['hadoop_spark']['tf_spark_connector_version']                    = "2.11-1.12.0"
+default['hadoop_spark']['mysql_driver']                                  = "#{node['download_url']}/mysql-connector-java-5.1.29-bin.jar"
+
+#
+# Hudi Dependencies
+#
+default['hadoop_spark']['databricks_spark_avro_version']                          = "2.11-4.0.0"
+
+#
+# Delta
+#
+default['hadoop_spark']['databricks_delta_version']                          = "2.11-0.3.0"
