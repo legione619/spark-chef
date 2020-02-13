@@ -2,16 +2,18 @@ include_attribute "kagent"
 include_attribute "hops"
 include_attribute "hopsmonitor"
 include_attribute "hive2"
+include_attribute "elastic"
 
 default['hadoop_spark']['user']                                 = node['install']['user'].empty? ? "spark" : node['install']['user']
 default['hadoop_spark']['group']                                = node['install']['user'].empty? ? node['hops']['group'] : node['install']['user']
 
-default['hadoop_spark']['version']                              = "2.4.3.0"
+default['hadoop_spark']['version']                              = "2.4.3.1"
 default['scala']['version'] 	                                = "2.11"
 default['hadoop_spark']['dir']                                  = node['install']['dir'].empty? ? "/srv/hops" : node['install']['dir']
 default['hadoop_spark']['base_dir']                             = "#{node['hadoop_spark']['dir']}/spark"
 default['hadoop_spark']['home']                                 = "#{node['hadoop_spark']['dir']}/spark-#{node['hadoop_spark']['version']}-bin-without-hadoop-with-hive-with-r"
 default['hadoop_spark']['conf_dir']                             = "#{node['hadoop_spark']['base_dir']}/conf"
+default['hadoop_spark']['hopsworks_jars']                       = "#{node['hadoop_spark']['base_dir']}/hopsworks-jars"
 default['hadoop_spark']['url']                                  = "#{node['download_url']}/spark-#{node['hadoop_spark']['version']}-bin-without-hadoop-with-hive-with-r.tgz"
 
 default['hadoop_spark']['spark_sql_dependencies_url']           = "#{node['download_url']}/spark-sql-dependencies"
@@ -42,10 +44,8 @@ default['hadoop_spark']['yarn']['scheduler']['heartbeat']['interval_ms'] = 5000
 default['hadoop_spark']['yarn']['queue']                           = "default"
 # the Spark jar can  be in a world-readable location on HDFS. This allows YARN to cache it on nodes so that it doesn't need to be distributed each time an application runs.
 # The path given is the full hdfs path, without the protocol prefix ( hdfs://)
-default['hadoop_spark']['yarn']['archive']                         =  "spark-jars.zip"
 default['hadoop_spark']['yarn']['pyspark_archive']                 =  "pyspark.zip"
 default['hadoop_spark']['yarn']['py4j_archive']                    =  "py4j-0.10.7-src.zip"
-default['hadoop_spark']['yarn']['archive_hdfs']                    =  "/user/#{node['hadoop_spark']['user']}/#{node['hadoop_spark']['yarn']['archive']}"
 default['hadoop_spark']['yarn']['warehouse_hdfs']                  =  "/user/#{node['hadoop_spark']['user']}/spark-warehouse"
 default['hadoop_spark']['yarn']['pyspark_archive_hdfs']            =  "/user/#{node['hadoop_spark']['user']}/#{node['hadoop_spark']['yarn']['pyspark_archive']}"
 default['hadoop_spark']['yarn']['py4j_archive_hdfs']               =  "/user/#{node['hadoop_spark']['user']}/#{node['hadoop_spark']['yarn']['py4j_archive']}"
@@ -77,7 +77,6 @@ default['hadoop_spark']['history']['fs']['cleaner']['maxAge']      = "7d"
 # 5g is a learned parameter from 1TB benchmarks
 #
 default['hadoop_spark']['driver']['maxResultSize']                = "5g"
-default['hadoop_spark']['local']['dir']                           = "/tmp" # node['hops']['data_dir'] + "/tmp"
 default['hadoop_spark']['daemon']['memory']                       = "4g"
 default['hadoop_spark']['sql']['broadcastTimeout']                = "1200"
 default['hadoop_spark']['sql']['networkTimeout']                  = "700"
@@ -125,9 +124,13 @@ default['hadoop_spark']['mysql_driver']                                  = "#{no
 #
 # Hudi Dependencies
 #
-default['hadoop_spark']['databricks_spark_avro_version']                          = "2.11-4.0.0"
+default['hadoop_spark']['databricks_spark_avro_version']                 = "2.11-4.0.0"
+default['hadoop_spark']['hudi_bundle_url']                               = "#{node['download_url']}/hudi/#{node['hive2']['hudi_version']}/hudi-spark-bundle-#{node['hive2']['hudi_version']}.jar"
 
 #
 # Delta
 #
 default['hadoop_spark']['databricks_delta_version']                          = "2.11-0.3.0"
+
+# Spark elastic connector 
+default['hadoop_spark']['elastic_connector']['url']                          = "#{node['download_url']}/elasticsearch-spark-20_2.11-#{node['elastic']['version']}.jar"

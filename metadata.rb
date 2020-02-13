@@ -4,7 +4,7 @@ maintainer_email "jdowling@kth.se"
 license          "Apache v2"
 description      'Installs/Configures Spark'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          "1.0.0"
+version          "1.2.0"
 source_url       "https://github.com/hopshadoop/spark-chef"
 
 depends          "kagent"
@@ -78,10 +78,6 @@ attribute "hadoop_spark/yarn/am/attemptFailuresValidityInterval",
 
 attribute "hadoop_spark/driver/maxResultSize",
           :description => "Default '5g'. Change to '1g', '500m', etc",
-          :type => 'string'
-
-attribute "hadoop_spark/local/dir",
-          :description => "Default /tmp'. Change to: '/srv/disk1/tmp,/srv/disk2/tmp,/srv/disk3/tmp'",
           :type => 'string'
 
 attribute "hadoop_spark/historyserver/private_ips",
