@@ -4,7 +4,7 @@ maintainer_email "jdowling@kth.se"
 license          "Apache v2"
 description      'Installs/Configures Spark'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          "1.3.0"
+version          "1.4.0"
 source_url       "https://github.com/hopshadoop/spark-chef"
 
 depends 'java', '~> 7.0.0'
@@ -28,10 +28,6 @@ recipe           "historyserver", "Installs/starts the Spark historyserver"
 
 attribute "hadoop_spark/user",
           :description => "Username to run spark master/worker as",
-          :type => 'string'
-
-attribute "hadoop_spark/group",
-          :description => "Groupname to run spark master/worker as",
           :type => 'string'
 
 attribute "hadoop_spark/dir",
@@ -106,6 +102,10 @@ attribute "hadoop_spark/tf_spark_connector_version",
           :description => "the version of the tf-spark-connector .jar",
           :type => "string"
 
+attribute "hadoop_spark/spark_tfrecord_version",
+          :description => "the version of the spark-tfrecord library .jar",
+          :type => "string"
+
 attribute "hadoop_spark/hopsutil_version",
           :description => "the version of the hops-library .jar",
           :type => "string"
@@ -154,3 +154,13 @@ attribute "hadoop_spark/databricks_delta_version",
 attribute "hadoop_spark/url",
           :description => "the url for downloading the spark tgz",
           :type => "string"
+
+attribute "hadoop_spark/hsfs/version",
+          :description => "Version of the HSFS library",
+          :type => "string"
+
+attribute "hadoop_spark/hsfs/url",
+          :description => "URL from where to download the HSFS library",
+          :type => "string"
+
+

@@ -9,14 +9,15 @@
 
 include_recipe "java"
 
-group node['hadoop_spark']['group'] do
+group node['hops']['group'] do
+  gid node['hops']['group_id']
   action :create
-  not_if "getent group #{node['hadoop_spark']['group']}"
+  not_if "getent group #{node['hops']['group']}"
   not_if { node['install']['external_users'].casecmp("true") == 0 }
 end
 
 user node['hadoop_spark']['user'] do
-  gid node['hadoop_spark']['group']
+  gid node['hops']['group']
   action :create
   system true
   shell "/bin/false"
@@ -24,7 +25,7 @@ user node['hadoop_spark']['user'] do
   not_if { node['install']['external_users'].casecmp("true") == 0 }
 end
 
-group node['hadoop_spark']['group'] do
+group node['hops']['group'] do
   action :modify
   members ["#{node['hadoop_spark']['user']}"]
   append true
@@ -33,7 +34,7 @@ end
 
 directory node['hadoop_spark']['dir']  do
   owner "root"
-  group node['hadoop_spark']['group']
+  group node['hops']['group']
   mode "755"
   action :create
   not_if { File.directory?("#{node['hadoop_spark']['dir']}") }
@@ -63,7 +64,7 @@ bash 'extract_hadoop_spark' do
                 set -e
                 rm -rf #{node['hadoop_spark']['base_dir']}
                 tar -xf #{cached_package_filename} -C #{node['hadoop_spark']['dir']}
-                chown -R #{node['hadoop_spark']['user']}:#{node['hadoop_spark']['group']} #{node['hadoop_spark']['dir']}/spark*
+                chown -R #{node['hadoop_spark']['user']}:#{node['hops']['group']} #{node['hadoop_spark']['dir']}/spark*
                 chmod -R 755 #{node['hadoop_spark']['dir']}/spark*
                 touch #{spark_down}
         EOH
@@ -87,7 +88,7 @@ end
 
 link node['hadoop_spark']['base_dir'] do
   owner node['hadoop_spark']['user']
-  group node['hadoop_spark']['group']
+  group node['hops']['group']
   to node['hadoop_spark']['home']
 end
 
@@ -107,7 +108,7 @@ end
 
 directory node['hadoop_spark']['hopsworks_jars'] do
   owner node['hadoop_spark']['user']
-  group node['hadoop_spark']['group']
+  group node['hops']['group']
   mode "0755"
   action :create
 end
@@ -133,6 +134,7 @@ sql_dep = [
   "snappy-0.4.jar",
   "spark-avro_#{node['hadoop_spark']['spark_avro_version']}.jar",
   "spark-tensorflow-connector_#{node['hadoop_spark']['tf_spark_connector_version']}.jar",
+  "spark-tfrecord_#{node['hadoop_spark']['spark_tfrecord_version']}.jar",  
   "spark-avro_#{node['hadoop_spark']['databricks_spark_avro_version']}.jar",
   "delta-core_#{node['hadoop_spark']['databricks_delta_version']}.jar"
 ]
@@ -140,7 +142,7 @@ for f in sql_dep do
   remote_file "#{node['hadoop_spark']['hopsworks_jars']}/#{f}" do
     source "#{purl}/#{f}"
     owner node['hadoop_spark']['user']
-    group node['hadoop_spark']['group']
+    group node['hops']['group']
     mode "0644"
     action :create_if_missing
   end
@@ -160,7 +162,7 @@ mysql_driver=File.basename(node['hadoop_spark']['mysql_driver'])
 remote_file "#{node['hadoop_spark']['hopsworks_jars']}/#{mysql_driver}" do
   source node['hadoop_spark']['mysql_driver']
   owner node['hadoop_spark']['user']
-  group node['hadoop_spark']['group']
+  group node['hops']['group']
   mode "0644"
   action :create_if_missing
 end
@@ -183,103 +185,50 @@ remote_file "#{node['hadoop_spark']['hopsworks_jars']}/#{elastic_connector}" do
   action :create
 end
 
+hsfs=File.basename(node['hadoop_spark']['hsfs']['url'])
+remote_file "#{node['hadoop_spark']['hopsworks_jars']}/#{hsfs}" do
+  source node['hadoop_spark']['hsfs']['url']
+  owner node['hadoop_spark']['user']
+  group node['hops']['group']
+  mode "0644"
+  action :create
+end
+
 template"#{node['hadoop_spark']['conf_dir']}/log4j.properties" do
   source "app.log4j.properties.erb"
   owner node['hadoop_spark']['user']
-  group node['hadoop_spark']['group']
+  group node['hops']['group']
   mode 0650
 end
 
 template"#{node['hadoop_spark']['conf_dir']}/yarnclient-driver-log4j.properties" do
   source "yarnclient-driver-log4j.properties.erb"
   owner node['hadoop_spark']['user']
-  group node['hadoop_spark']['group']
+  group node['hops']['group']
   mode 0655
 end
 
 template"#{node['hadoop_spark']['conf_dir']}/executor-log4j.properties" do
   source "executor-log4j.properties.erb"
   owner node['hadoop_spark']['user']
-  group node['hadoop_spark']['group']
+  group node['hops']['group']
   mode 0655
-end
-
-
-my_ip = my_private_ip()
-
-master_ip = "yarn"
-
-begin
-  namenode_ip = private_recipe_ip("hops","nn")
-rescue
-  begin
-    namenode_ip = private_recipe_ip("hops","nn")
-  rescue
-    namenode_ip = my_private_ip()
-  end
 end
 
 template"#{node['hadoop_spark']['home']}/conf/spark-env.sh" do
   source "spark-env.sh.erb"
   owner node['hadoop_spark']['user']
-  group node['hadoop_spark']['group']
+  group node['hops']['group']
   mode 0655
-  variables({
-        :master_ip => master_ip,
-        :private_ip => my_ip
-           })
-end
-
-
-eventlog_dir = "#{node['hops']['hdfs']['user_home']}/#{node['hadoop_spark']['user']}/applicationHistory"
-
-begin
-  historyserver_ip = private_recipe_ip("hadoop_spark","historyserver")
-rescue
-  historyserver_ip = my_private_ip()
-end
-
-template"#{node['hadoop_spark']['home']}/conf/spark-defaults.conf" do
-  source "spark-defaults.conf.erb"
-  owner node['hadoop_spark']['user']
-  group node['hadoop_spark']['group']
-  mode 0655
-  variables({
-        :private_ip => my_ip,
-        :master_ip => master_ip,
-        :namenode_ip => namenode_ip,
-        :yarn => node['hadoop_spark']['yarn']['support'],
-        :eventlog_dir => eventlog_dir,
-        :historyserver_ip => historyserver_ip
-           })
 end
 
 template"#{node['hadoop_spark']['home']}/conf/spark-blacklisted-properties.txt" do
   source "spark-blacklisted-properties.txt.erb"
   owner node['hadoop_spark']['user']
-  group node['hadoop_spark']['group']
+  group node['hops']['group']
   mode 0655
 end
 
 magic_shell_environment 'SPARK_HOME' do
   value node['hadoop_spark']['base_dir']
-end
-
-nn_endpoint = private_recipe_ip("hops", "nn") + ":#{node['hops']['nn']['port']}"
-begin
-  metastore_ip = private_recipe_ip("hive2", "metastore")
-rescue
-  metastore_ip = private_recipe_ip("hive2", "default")
-  Chef::Log.warn "Using default ip for metastore (metastore service not defined in cluster definition (yml) file."
-end
-
-template "#{node['hadoop_spark']['home']}/conf/hive-site.xml" do
-  source "hive-site.xml.erb"
-  owner node['hadoop_spark']['user']
-  group node['hadoop_spark']['group']
-  mode 0655
-  variables({
-                :nn_endpoint => nn_endpoint,
-                :metastore_ip => metastore_ip
-            })
 end
