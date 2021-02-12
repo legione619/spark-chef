@@ -4,7 +4,7 @@ maintainer_email "jdowling@kth.se"
 license          "Apache v2"
 description      'Installs/Configures Spark'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          "2.0.0"
+version          "2.1.0"
 source_url       "https://github.com/hopshadoop/spark-chef"
 
 depends 'java', '~> 7.0.0'
@@ -90,10 +90,6 @@ attribute "install/user",
           :description => "User to install the services as",
           :type => "string"
 
-attribute "hopsmonitor/default/private_ips",
-          :description => "Influxdb ip",
-          :type => "string"
-
 attribute "hopslog/default/private_ips",
           :description => "elk services ip",
           :type => "string"
@@ -141,10 +137,6 @@ attribute "hadoop_spark/hopsexamples_featurestore_util4j/url",
 
 attribute "hadoop_spark/hopsexamples_featurestore_util_py/url",
           :description => "the url for dowloading the hopsexamples_featurestore_util_py python file",
-          :type => "string"
-
-attribute "hadoop_spark/databricks_spark_avro_version",
-          :description => "the version of the databricks avro jar (dependency of hudi)",
           :type => "string"
 
 attribute "hadoop_spark/databricks_delta_version",
