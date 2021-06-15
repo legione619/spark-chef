@@ -4,15 +4,17 @@ maintainer_email "jdowling@kth.se"
 license          "Apache v2"
 description      'Installs/Configures Spark'
 long_description IO.read(File.join(File.dirname(__FILE__), 'README.md'))
-version          "1.2.0"
+version          "2.2.0"
 source_url       "https://github.com/hopshadoop/spark-chef"
 
-depends          "kagent"
-depends          "java"
-depends          "hops"
-depends          "magic_shell"
-depends          "hopsmonitor"
-depends          'hive2'
+depends 'java', '~> 7.0.0'
+depends 'magic_shell', '~> 1.0.0'
+depends 'conda'
+depends 'kagent'
+depends 'ndb'
+depends 'hops'
+depends 'hive2'
+depends 'hopsmonitor'
 
 recipe           "install", "Installs Spark binaries"
 #link:<a target='_blank' href='http://%host%:8080/'>Launch the WebUI for the Spark Master</a>
@@ -26,10 +28,6 @@ recipe           "historyserver", "Installs/starts the Spark historyserver"
 
 attribute "hadoop_spark/user",
           :description => "Username to run spark master/worker as",
-          :type => 'string'
-
-attribute "hadoop_spark/group",
-          :description => "Groupname to run spark master/worker as",
           :type => 'string'
 
 attribute "hadoop_spark/dir",
@@ -57,7 +55,7 @@ attribute "hadoop_spark/worker/cleanup/enabled",
           :type => 'string'
 
 attribute "hadoop_spark/version",
-          :description => "Spark version (e.g., 1.6.1 or 2.0.1 or 2.1.0)",
+          :description => "Spark version (e.g., 1.6.1 or 2.0.1 or 2.2.0)",
           :type => 'string'
 
 attribute "hadoop_spark/history/fs/cleaner/enabled",
@@ -92,16 +90,16 @@ attribute "install/user",
           :description => "User to install the services as",
           :type => "string"
 
-attribute "hopsmonitor/default/private_ips",
-          :description => "Influxdb ip",
-          :type => "string"
-
 attribute "hopslog/default/private_ips",
           :description => "elk services ip",
           :type => "string"
 
 attribute "hadoop_spark/tf_spark_connector_version",
           :description => "the version of the tf-spark-connector .jar",
+          :type => "string"
+
+attribute "hadoop_spark/spark_tfrecord_version",
+          :description => "the version of the spark-tfrecord library .jar",
           :type => "string"
 
 attribute "hadoop_spark/hopsutil_version",
@@ -141,14 +139,38 @@ attribute "hadoop_spark/hopsexamples_featurestore_util_py/url",
           :description => "the url for dowloading the hopsexamples_featurestore_util_py python file",
           :type => "string"
 
-attribute "hadoop_spark/databricks_spark_avro_version",
-          :description => "the version of the databricks avro jar (dependency of hudi)",
-          :type => "string"
-
 attribute "hadoop_spark/databricks_delta_version",
           :description => "the version of the databricks delta jar",
           :type => "string"
 
 attribute "hadoop_spark/url",
           :description => "the url for downloading the spark tgz",
+          :type => "string"
+
+attribute "hadoop_spark/hsfs/version",
+          :description => "Version of the HSFS library",
+          :type => "string"
+
+attribute "hadoop_spark/hsfs/url",
+          :description => "URL from where to download the HSFS library",
+          :type => "string"
+
+attribute "hadoop_spark/snowflake-jdbc/version",
+          :description => "Version of the snowflake jdbc driver",
+          :type => "string"
+
+attribute "hadoop_spark/snowflake-jdbc/url",
+          :description => "URL from where to download the snowflake jdbc driver",
+          :type => "string"
+
+attribute "hadoop_spark/spark-snowflake/artifactID",
+          :description => "Artifact id of the spark-snowflake connector",
+          :type => "string"
+
+attribute "hadoop_spark/spark-snowflake/version",
+          :description => "Version of the spark-snowflake connector",
+          :type => "string"
+
+attribute "hadoop_spark/spark-snowflake/url",
+          :description => "URL from where to download the spark-snowflake connector",
           :type => "string"
