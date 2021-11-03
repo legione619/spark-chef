@@ -4,6 +4,7 @@ include_attribute "hopsmonitor"
 include_attribute "hive2"
 
 default['hadoop_spark']['user']                                 = node['install']['user'].empty? ? "spark" : node['install']['user']
+default['hadoop_spark']['user_id']                              = '1505'
 
 default['scala']['version'] 	                                  = "2.12"
 
@@ -26,6 +27,10 @@ default['hadoop_spark']['home']                                 = "#{node['hadoo
 default['hadoop_spark']['conf_dir']                             = "#{node['hadoop_spark']['base_dir']}/conf"
 default['hadoop_spark']['sbin_dir']                             = "#{node['hadoop_spark']['base_dir']}/sbin"
 default['hadoop_spark']['hopsworks_jars']                       = "#{node['hadoop_spark']['base_dir']}/hopsworks-jars"
+default['hadoop_spark']['logs_dir']                             = "#{node['hadoop_spark']['base_dir']}/logs"
+# Data volume directories
+default['hadoop_spark']['data_volume']['root_dir']              = "#{node['data']['dir']}/spark"
+default['hadoop_spark']['data_volume']['logs_dir']              = "#{node['hadoop_spark']['data_volume']['root_dir']}/logs"
 default['hadoop_spark']['url']                                  = "#{node['download_url']}/spark-#{node['hadoop_spark']['version']}-bin-without-hadoop-with-hive-with-r.tgz"
 
 default['hadoop_spark']['spark_sql_dependencies_url']              = "#{node['download_url']}/spark-sql-dependencies"
