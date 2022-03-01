@@ -8,6 +8,7 @@ group node['hops']['group'] do
 end
 
 user node['hadoop_spark']['user'] do
+  uid node['hadoop_spark']['user_id']
   gid node['hops']['group']
   action :create
   system true
@@ -62,6 +63,45 @@ link node['hadoop_spark']['base_dir'] do
   owner node['hadoop_spark']['user']
   group node['hops']['group']
   to node['hadoop_spark']['home']
+end
+
+directory node['data']['dir'] do
+  owner 'root'
+  group 'root'
+  mode '0775'
+  action :create
+  not_if { ::File.directory?(node['data']['dir']) }
+end
+
+directory node['hadoop_spark']['data_volume']['root_dir'] do
+  owner node['hadoop_spark']['user']
+  group node['hops']['group']
+  mode '0770'
+end
+
+directory node['hadoop_spark']['data_volume']['logs_dir'] do
+  owner node['hadoop_spark']['user']
+  group node['hops']['group']
+  mode '0770'
+end
+
+bash 'Move Spark logs to data volume' do
+  user 'root'
+  code <<-EOH
+    set -e
+    mv -f #{node['hadoop_spark']['logs_dir']}/* #{node['hadoop_spark']['data_volume']['logs_dir']}
+    rm -rf #{node['hadoop_spark']['logs_dir']}
+  EOH
+  only_if { conda_helpers.is_upgrade }
+  only_if { File.directory?(node['hadoop_spark']['logs_dir'])}
+  not_if { File.symlink?(node['hadoop_spark']['logs_dir'])}
+end
+
+link node['hadoop_spark']['logs_dir'] do
+  owner node['hadoop_spark']['user']
+  group node['hops']['group']
+  mode '0770'
+  to node['hadoop_spark']['data_volume']['logs_dir']
 end
 
 # The following dependencies are required to run spark-sql with parquet and orc. We install them here so that users don't have to do it from their notebooks/jobs
@@ -145,20 +185,6 @@ template"#{node['hadoop_spark']['conf_dir']}/log4j.properties" do
   owner node['hadoop_spark']['user']
   group node['hops']['group']
   mode 0650
-end
-
-template"#{node['hadoop_spark']['conf_dir']}/yarnclient-driver-log4j.properties" do
-  source "yarnclient-driver-log4j.properties.erb"
-  owner node['hadoop_spark']['user']
-  group node['hops']['group']
-  mode 0655
-end
-
-template"#{node['hadoop_spark']['conf_dir']}/executor-log4j.properties" do
-  source "executor-log4j.properties.erb"
-  owner node['hadoop_spark']['user']
-  group node['hops']['group']
-  mode 0655
 end
 
 template"#{node['hadoop_spark']['home']}/conf/spark-env.sh" do
